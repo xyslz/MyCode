@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.caijai.data.mapper.SupplierMapper">
+
+	<resultMap type="com.caijai.data.entity.Supplier" id="supplierMap">
+		<result column="isConfrimDelivery" property="isConfrimDelivery" typeHandler="com.caijai.base.sysenum.handler.SysSetHandler"/>
+		<result column="state" property="state" typeHandler="com.caijai.base.sysenum.handler.SupplierStateHandler"/>
+		<result column="Effective_IsEffective" property="effectiveIseffective"/>
+		<result column="Effective_EffectiveDate" property="effectiveEffectivedate"/>
+		<result column="Effective_DisableDate" property="effectiveDisabledate"/>
+	</resultMap>
+
+	<select id="getUserBySupplier" parameterType="java.util.Map" resultMap="supplierMap">
+		select * from BD_Supplier where code not in (
+			select s.code from BD_Supplier as s
+			left join SYS_Euser as e
+			on s.code = e.userCode
+			where e.dr = 0
+		)
+		<if test="org != null and org !=''">
+			and org = #{org}
+		</if>
+	</select>
+	
+	<select id="chooseSupplier" parameterType="java.util.Map" resultMap="supplierMap">
+		select * from BD_Supplier where org = #{org} and ( code like '%${code}%' or name like '%${code}%' )
+	</select>
+	
+	
+	<select id="getTotalByCZ" parameterType="java.util.Map" resultType="int">
+		select count(*) from  BD_Supplier as sup 
+		left join BD_Trade as trade on trade.id = sup.trade
+		left join BD_Operators as users on users.id = sup.buyer
+		where sup.dr = 0
+		<if test=" org != null and org!='' ">
+			and sup.org like '%${org}%'
+		</if>
+		<if test=" code != null and code!='' ">
+			and sup.code like '%${code}%'
+		</if>
+		<if test=" buyerName != null and buyerName!='' ">
+			and users.name like '%${buyerName}%'
+		</if>
+		<if test=" name != null and name!='' ">
+			and sup.name  like '%${name}%'
+		</if>
+		<if test=" state != null and state!='' ">
+			and sup.state = #{state}
+		</if>
+		<if test=" supState != null and supState !='' ">
+			<choose>
+				<!-- 状态:5=挂起，6=黑名单 -->
+	 		 	<when test="supState == '挂起'.toString() ">
+	       		 	<!-- 挂起查询除挂起及黑名单的 -->
+	 		 		and sup.state != 5 and sup.state != 6
+	 		 	</when>
+	 		 	<when test="supState == '解挂'.toString() ">
+	 		 		<!-- 查询已挂起的 -->
+	 		 		and sup.state = 5
+	 		 	</when>
+	 		 	<when test="supState == '加入黑名单'.toString() ">
+	 		 		<!-- 查询除黑名单以外所有的 -->
+	 		 		and sup.state != 6
+	 		 	</when>
+	 		 	<when test="supState == '移出黑名单'.toString() ">
+	 		 		<!-- 查询除黑名单以外所有的 -->
+	 		 		and sup.state = 6
+	 		 	</when>
+	 		</choose>
+		</if>
+	</select>
+	
+	<select id="queryPageByCZ" parameterType="java.util.Map" resultMap="supplierMap">
+		SELECT t2.*
+			FROM BD_Supplier t1,
+			(SELECT 
+				TOP ${pageInfo.endPos} row_number() OVER ( ORDER BY sup.code DESC ) n,
+				trade.name as tradeName,trade.code as tradeCode,users.name as buyerName,
+				sup.* from  BD_Supplier as sup 
+				left join BD_Trade as trade on trade.id = sup.trade
+				left join BD_Operators as users on users.id = sup.buyer
+				where sup.dr = 0
+				<if test=" org != null and org!='' ">
+					and sup.org like '%${org}%'
+				</if>
+				<if test=" code != null and code!='' ">
+					and sup.code like '%${code}%'
+				</if>
+				<if test=" buyerName != null and buyerName!='' ">
+					and users.name like '%${buyerName}%'
+				</if>
+				<if test=" name != null and name!='' ">
+					and sup.name  like '%${name}%'
+				</if>
+				<if test=" state != null and state!='' ">
+					and sup.state = #{state}
+				</if>
+				<if test=" supState != null and supState !='' ">
+					<choose>
+						<!-- 状态:5=挂起，6=黑名单 -->
+			 		 	<when test="supState == '挂起'.toString() ">
+	         		 		<!-- 挂起查询除挂起及黑名单的 -->
+			 		 		and sup.state != 5 and sup.state != 6
+			 		 	</when>
+			 		 	<when test="supState == '解挂'.toString() ">
+			 		 		<!-- 查询已挂起的 -->
+			 		 		and sup.state = 5
+			 		 	</when>
+			 		 	<when test="supState == '加入黑名单'.toString() ">
+			 		 		<!-- 查询除黑名单以外所有的 -->
+			 		 		and sup.state != 6
+			 		 	</when>
+			 		 	<when test="supState == '移出黑名单'.toString() ">
+			 		 		<!-- 查询除黑名单以外所有的 -->
+			 		 		and sup.state = 6
+			 		 	</when>
+			 		</choose>
+				</if>
+			) t2 
+		WHERE t1.ID = t2.ID AND t2.n >= ${pageInfo.startPos} ORDER BY t2.n 
+	</select>
+	
+	<update id="updateQuality">
+		update BD_SupplierQuality set status = 1,reviewOn = #{reviewOn},reviewBy = #{reviewBy} 
+		where supplier = #{supplier} and dr = 0 
+	</update>
+	
+</mapper>

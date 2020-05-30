@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.caijai.data.mapper.ItemMasterSubMapper">
+	<resultMap type="com.caijai.data.entity.ItemMasterSub" id="itemMasterSubMapper">
+		<result column="type" property="type" typeHandler="com.caijai.base.sysenum.handler.ItemSubTypeHandler" />
+	</resultMap>
+
+	<select id="getListByItem" parameterType="java.util.Map" resultMap="itemMasterSubMapper">
+		select * from BD_ItemMasterSub 
+		where MainProducts = #{mainProducts} and type = #{type} 
+		<!-- and (subProductsName like '%皮' or subProductsName like '%泥') -->
+	</select>
+	
+	<select id="getByMud" parameterType="java.util.Map" resultMap="itemMasterSubMapper">
+		select * from BD_ItemMasterSub 
+		where MainProducts = #{mainProducts} and type = 0 
+		and subProductsName like '%皮' and dr = 0
+		<if test="mud != null and mud != '' ">
+			and id != #{mud}
+		</if>
+	</select>
+	
+	<select id="getBySkin" parameterType="java.util.Map" resultMap="itemMasterSubMapper">
+		select * from BD_ItemMasterSub 
+		where MainProducts = #{mainProducts} and type = 0 
+		and subProductsName like '%泥' and dr = 0
+		<if test="mud != null and mud != ''">
+			and id != #{mud}
+		</if>
+	</select>
+	
+	<update id="privateByproduct" statementType="CALLABLE" >
+		exec private_Byproduct  #{item},#{org},#{ln,jdbcType=NUMERIC},#{lp,jdbcType=NUMERIC}
+	</update>
+	
+</mapper>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.caijai.repair.mapper.KeepingPlanMapper">
+
+	<resultMap type="com.caijai.repair.entity.po.KeepingPlan" id="keepingPlanMap">
+	
+	</resultMap>
+	<sql id="keepingPlanSQL">
+		kp.docno,kp.fromdateplan,kp.todateplan,em.name emName,dp.name coordinatedptName
+	</sql>
+	<select id="queryNeedSE" resultMap="keepingPlanMap">
+		select <include refid="keepingPlanSQL"></include> from eq_KeepingPlan    kp 
+		left join EQ_EM em on kp.em = em.id 
+		left join SYS_Department dp on kp.coordinatedpt = dp.id
+		where kp.dr = 0    
+		<if test="org != null and org !=''">
+			and kp.org = #{org}
+		</if>
+		and kp.fromdateplan >= getdate() and kp.fromdateplan <![CDATA[ <=  ]]> DATEADD(day,#{day},getdate())
+	</select>
+</mapper>

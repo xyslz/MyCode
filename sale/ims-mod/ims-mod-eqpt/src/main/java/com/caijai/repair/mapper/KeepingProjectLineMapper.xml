@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.caijai.repair.mapper.KeepingProjectLineMapper">
+	<sql id="sql_column">
+		emid em  ,EMGroupID ,[CheckItemID] ,[Method] ,[Require]
+	</sql>
+
+	<sql id="sql_view">
+		(select em.ID emid ,line.[ID] ,line.EMGroupID ,[CheckItemID] ,[Method] ,[Require] ,em.ProductionLine, mould.[No] mouldno
+		,line.KeepMouldID      ,line.[No] [lineno] from eq_em em 
+		inner join EQ_KeepingMouldEM mould on mould.EMGroupID = em.EMGroup and mould.dr = 0
+		inner join EQ_KeepingMouldLine line on mould.KeepMouldID = line.KeepMouldID and mould.emGroupID = line.EMGroupID and line.dr = 0
+		where em.dr = 0)
+	</sql>
+
+	<select id="queryByMould" parameterType="String" resultType="com.caijai.repair.entity.po.KeepingProjectLine">
+			select <include refid="sql_column" />,ROW_NUMBER() over(order by mouldno,emid,[lineno]) no  
+		from <include refid="sql_view" /> t
+		where  t.ProductionLine = #{ProductionLine}
+		and t.KeepMouldID = #{KeepMouldID}
+	</select>
+	
+</mapper>

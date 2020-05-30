@@ -1,0 +1,40 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.caijai</groupId>
+    <artifactId>ims-parent</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+  <artifactId>ims-mod</artifactId>
+  <packaging>pom</packaging>
+  <modules>
+  	<!-- <module>ims-mod-start</module> -->
+  	<module>ims-mod-task</module>
+  	<!-- <module>ims-mod-init</module>
+  	<module>ims-mod-person</module> -->
+  	<module>ims-mod-data</module>
+<!--   	<module>ims-mod-purchase</module>
+  	<module>ims-mod-ets</module> -->
+  	<module>ims-mod-dock</module>
+<!--   	<module>ims-mod-wms</module>
+	<module>ims-mod-grant</module>
+	<module>ims-mod-common</module>
+	<module>ims-mod-supplier</module>
+	<module>ims-mod-finance</module>
+	<module>ims-mod-product</module>
+	<module>ims-mod-qc</module>
+	<module>ims-mod-report</module>
+	<module>ims-mod-sales</module>
+	<module>ims-mod-weighing</module>
+	<module>ims-mod-eqpt</module>
+	<module>ims-mod-out</module> -->
+	<module>ims-mod-morgan</module>
+  </modules>
+  <dependencies>
+	<dependency>
+		<groupId>com.caijai</groupId>
+		<artifactId>ims-root</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</dependency>
+  </dependencies>
+</project>

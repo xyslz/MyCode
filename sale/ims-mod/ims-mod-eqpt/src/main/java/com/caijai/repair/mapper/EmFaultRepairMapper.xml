@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.caijai.repair.mapper.EmFaultRepairMapper">
+
+	<select id="queryList" parameterType="String" resultType="com.caijai.repair.entity.EmFaultRepair">
+		select f.* from EQ_EmFaultRepair r 
+		inner join EQ_EmFault f on r.EmFault = f.ID
+		inner join EQ_Em em on f.groupid = em.EMGroup 
+		where 1=1 
+		<if test="faultCode != null and faultCode != ''">
+		    and f.FaultCode = #{faultCode} 
+		</if>
+		<if test="faultPart != null and faultPart != ''">
+			and f.FaultPart = #{faultPart} 		
+		</if>
+		<if test="groupID != null and groupID != ''">
+			and f.GroupID = #{groupID}	
+		</if>
+		<if test="emid != null and emid != ''">
+			and em.id = #{emid} 
+		</if>
+	</select>
+</mapper>

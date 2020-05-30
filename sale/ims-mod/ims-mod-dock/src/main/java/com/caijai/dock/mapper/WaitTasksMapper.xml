@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.caijai.dock.mapper.WaitTasksMapper">
+
+	<resultMap type="com.caijai.dock.entity.WaitTasks" id="waitTasksMap">
+		<result column="taskType" property="taskType" typeHandler="com.caijai.base.sysenum.handler.TypeOffHandler"/>
+		<result column="realTimeState" property="realTimeState" typeHandler="com.caijai.base.sysenum.handler.RealOffHandler"/>
+		<result column="isOffline" property="isOffline" typeHandler="com.caijai.base.sysenum.handler.SysSetHandler"/>
+	</resultMap>
+
+
+	<select id="queryReady" resultMap="waitTasksMap">
+		select * 
+		from BD_WaitTasks 
+		where dr != 1 
+		and org = #{org}
+		and RealTimeState = 0 
+		and isOffline = 0
+		order by ts asc
+	</select>
+	
+	<select id="queryPage" resultMap="waitTasksMap">
+		SELECT * FROM 
+			( 
+		    SELECT TOP (#{pageNumber}*#{pageSize}) ROW_NUMBER() OVER(ORDER BY createdOn DESC) AS ROWID,* 
+				from BD_WaitTasks 
+				where 1=1 
+				and dr = 0 
+				and org = #{task.org}
+				AND isOffline = #{isOffline}
+				<if test="task.code != null and task.code !=''">AND code = #{task.code}</if>
+				<if test="task.name != null and task.name !=''">AND name like '%${task.name}%'</if>
+				<if test="task.source != null and task.source !=''">AND source like '%${task.source}%'</if>
+				<if test="task.orderNum != null and task.orderNum !=''">AND orderNum = #{task.orderNum}</if>
+				<if test="task.startOn !=null and task.startOn!=''">AND createdOn >= #{task.startOn}</if>
+				<if test="task.stopOn !=null and task.stopOn!=''">AND createdOn <![CDATA[ <= ]]> #{task.stopOn}</if>
+				 ) AS t 
+			    WHERE ROWID > (#{pageNumber}-1)*#{pageSize} 
+	</select>
+	
+	<select id="count" resultType="java.lang.Integer">
+		select count(*) 
+		from BD_WaitTasks 
+		where 1=1 
+		and dr = 0 
+		and org = #{task.org}
+		AND isOffline = #{isOffline}
+		<if test="task.code != null and task.code !=''">AND code = #{task.code}</if>
+		<if test="task.name != null and task.name !=''">AND name like '%${task.name}%'</if>
+		<if test="task.source != null and task.source !=''">AND source like '%${task.source}%'</if>
+		<if test="task.orderNum != null and task.orderNum !=''">AND orderNum = #{task.orderNum}</if>
+		<if test="task.startOn !=null and task.startOn!=''">AND createdOn >= #{task.startOn}</if>
+		<if test="task.stopOn !=null and task.stopOn!=''">AND createdOn <![CDATA[ <= ]]> #{task.stopOn}</if>
+	</select>
+</mapper>

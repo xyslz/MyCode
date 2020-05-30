@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.caijai.person.mapper.EmployeeArchiveMapper">
+	<select id="queryPageByShift" parameterType="java.util.Map" resultType="java.util.Map">
+		SELECT t2.n, t1.EmployeeCode as employeeCode,t1.Name as name,t2.email as email,t2.shiftGroup
+			FROM [dbo].[SYS_EmployeeArchive] t1,
+				(SELECT 
+					TOP ${params.endPos} row_number() OVER ( ORDER BY e.createdOn ASC ) n,e.id, e.EmployeeCode,e.Name,s.shiftGroup,p.email  from [dbo].[SYS_EmployeeArchive] as e 
+					left join  [dbo].[RE_ShiftGroupMember] as s on s.employeeCode = e.EmployeeCode
+					left join [dbo].[SYS_Person] as p on e.person = p.id
+					where e.dr = 0 and e.OwnerOrg = #{ownerOrg}
+					<if test="shiftGroup != null and shiftGroup !=''">
+						and s.shiftGroup = #{shiftGroup}
+						and s.dr = 0
+						and (((s.leaveDate is null or s.leaveDate = '') 
+							and ( #{currentDate} > s.enterDate )) or ( #{currentDate} between s.enterDate and s.leaveDate ))
+					</if>
+					<if test="name != null and name !=''">
+						and e.name like '%${name}%'
+					</if>
+			) t2 
+		WHERE t1.ID = t2.ID AND t2.n >= ${params.startPos}
+		ORDER BY t2.n
+	</select>
+	<select id="getCountByShift" parameterType="java.util.Map" resultType="int">
+		select count(0) from [dbo].[SYS_EmployeeArchive] as e 
+		left join  [dbo].[RE_ShiftGroupMember] as s on s.employeeCode = e.EmployeeCode
+					left join [dbo].[SYS_Person] as p on e.person = p.id
+					where e.dr = 0 and e.OwnerOrg = #{ownerOrg}
+		<if test="shiftGroup != null and shiftGroup !=''">
+			and s.shiftGroup = #{shiftGroup}
+			and s.dr = 0
+			and (((s.leaveDate is null or s.leaveDate = '') 
+				and ( #{currentDate} > s.enterDate )) or ( #{currentDate} between s.enterDate and s.leaveDate ))
+		</if>
+		<if test="name != null and name !=''">
+			and e.name like '%${name}%'
+		</if>
+	</select>
+</mapper>

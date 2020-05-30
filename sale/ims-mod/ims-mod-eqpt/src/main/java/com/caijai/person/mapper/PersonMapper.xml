@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.caijai.person.mapper.PersonMapper">
+	<select id="queryPageByEqpt" parameterType="java.util.Map" resultType="java.util.Map">
+		SELECT t2.n,t1.*
+			FROM [dbo].[RE_ShiftGroupMember] t1,
+				(SELECT 
+					TOP ${params.endPos} row_number() OVER ( ORDER BY member.createdOn ASC ) n,member.id from [dbo].[RE_ShiftGroupMember] as member 
+					inner join [dbo].[BD_ShiftGroup] as shifts on shifts.id = member.shiftGroup
+					inner join [dbo].[BD_ShiftGroupClass] as class on class.id = shifts.shiftGroupClass
+					where member.dr = 0 and shifts.effective_IsEffective = 1 
+					and shifts.dr=0 and class.isMaintainTeam = 1 and class.dr=0 
+					<if test="personName != null and personName !=''">
+						and member.employeeName like '%${personName}%'
+					</if>
+					<if test="shiftGroup != null and shiftGroup !=''">
+						and shiftGroup = #{shiftGroup}
+					</if>
+			) t2 
+		WHERE t1.ID = t2.ID AND t2.n >= ${params.startPos}
+		ORDER BY t2.n 
+	</select>
+	<select id="getCountByEqpt" parameterType="java.util.Map" resultType="int">
+		select count(0) from [dbo].[RE_ShiftGroupMember] as member 
+		inner join [dbo].[BD_ShiftGroup] as shifts on shifts.id = member.shiftGroup
+		inner join [dbo].[BD_ShiftGroupClass] as class on class.id = shifts.shiftGroupClass
+		where member.dr = 0 and shifts.effective_IsEffective = 1 
+		and shifts.dr=0 and class.isMaintainTeam = 1 and class.dr=0  
+		<if test="personName != null and personName !=''">
+			and member.employeeName like '%${personName}%'
+		</if>
+		<if test="shiftGroup != null and shiftGroup !=''">
+			and shiftGroup = #{shiftGroup}
+		</if>
+	</select>
+	<select id="queryPersonByShift" parameterType="java.util.Map" resultType="java.util.Map">
+		select member.* from [dbo].[RE_ShiftGroupMember] as member 
+		inner join [dbo].[BD_ShiftGroup] as shifts on shifts.id = member.shiftGroup
+		inner join [dbo].[BD_ShiftGroupClass] as class on class.id = shifts.shiftGroupClass
+		where member.dr = 0 and shifts.effective_IsEffective = 1 
+		and shifts.dr=0 and class.isMaintainTeam = 1 and class.dr=0   
+		<if test="personName != null and personName !=''">
+			and member.employeeName like '%${personName}%'
+		</if>
+		<if test="shiftGroup != null and shiftGroup !=''">
+			and shiftGroup = #{shiftGroup}
+		</if>
+		and (((leaveDate is null or leaveDate = '') and ( #{currentDate} > enterDate )) or ( #{currentDate} between enterDate and leaveDate ))
+	</select>
+	<select id="queryPagePerson" parameterType="java.util.Map" resultType="com.caijai.person.entity.EmployeeArchive">
+		SELECT t2.n,t1.*
+			FROM [dbo].[SYS_EmployeeArchive] t1,
+				(SELECT 
+					TOP ${params.endPos} row_number() OVER ( ORDER BY a.createdOn ASC ) n,a.id from SYS_EmployeeArchive as a
+					left join  SYS_EmployCategory as b on a.PersonCategory = b.id
+					where OwnerOrg = #{ownerOrg}  and b.code in ('10','20')
+					<if test="name != null and name !=''">
+						and a.name like '%${name}%'
+					</if>
+			) t2 
+		WHERE t1.ID = t2.ID AND t2.n >= ${params.startPos}
+		ORDER BY t2.n 
+	</select>
+	<select id="getPersonCount" parameterType="java.util.Map" resultType="int">
+		SELECT COUNT(0) from SYS_EmployeeArchive as a
+		left join  SYS_EmployCategory as b on a.PersonCategory = b.id
+		where OwnerOrg = #{ownerOrg} and b.code in ('10','20')
+		<if test="name != null and name !=''">
+			and a.name like '%${name}%'
+		</if>
+	</select>
+</mapper>

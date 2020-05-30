@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.caijai.repair.mapper.RepairLineMapper">
+
+	<select id="getRepairLine" parameterType="java.util.Map" resultType="java.util.Map">
+		select em.Name as emname,em.Code as emcode,em.SPECS as emspecs,<include refid="linesql"/> from [dbo].[EQ_RepairOrderLine] as line
+		inner join EQ_EM as em on em.id = line.Emid
+		where line.id = #{id}
+	</select>
+	<sql id="linesql">
+		line.ID as id,
+		repairOrder as repairOrder,
+		emid as emid,
+		planStartTime as planStartTime,
+		planEndTime as planEndTime,
+		startTime as startTime,
+		endTime as endTime,
+		faultid as faultid,
+		faultpart as faultpart,
+		faultdesc as faultdesc,
+		reason as reason, 
+		repairdesc as repairdesc,
+		repairtype as repairtype,
+		repairState as repairState, 
+		confirm as confirm,
+		confirmDate as confirmDate,
+		ismove as ismove,
+		originLine as originLine,
+		meno as meno
+	</sql>
+
+</mapper>

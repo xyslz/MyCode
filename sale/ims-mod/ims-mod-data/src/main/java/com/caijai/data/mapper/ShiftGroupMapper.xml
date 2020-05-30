@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.caijai.data.mapper.ShiftGroupMapper">
+	
+	<resultMap type="com.caijai.data.entity.ShiftGroup" id="groupMap"></resultMap>
+
+	<select id="queryShiftGroup" parameterType="java.util.Map" resultType="java.util.Map">
+		SELECT t2.n,t2.deptName,t2.isMaintainTeam,t1.<include refid="shiftGroupSql"/>
+			FROM BD_ShiftGroup t1,
+				(SELECT 
+					TOP ${params.endPos} row_number() OVER ( ORDER BY shifts.code ASC ) n,dept.name as deptName,groups.isMaintainTeam,
+						shifts.* from BD_ShiftGroup as  shifts
+						left join BD_ShiftGroupClass as groups
+						on shifts.shiftGroupClass  = groups.id
+						left join SYS_Department as dept
+						on shifts.department = dept.id
+						where shifts.dr = 0 
+						<if test="org != null and org !=''">
+							and shifts.org like '%${org}%'
+						</if>
+						<if test="code != null and code !=''">
+							and shifts.code like '%${code}%'
+						</if>
+						<if test="name != null and name !=''">
+							and shifts.name like '%${name}%'
+						</if>
+						<if test="isEffective != null and isEffective !=''">
+							and shifts.effective_IsEffective like '%${isEffective}%'
+						</if>
+						<if test="shiftGroupClass != null and shiftGroupClass != ''">
+							and ( shifts.shiftGroupClass = #{shiftGroupClass} or groups.cid = #{shiftGroupClass} )
+						</if>
+						and shifts.dr = 0 
+						
+				) t2 
+			WHERE t1.ID = t2.ID AND t2.n >= ${params.startPos} ORDER BY t2.n 
+	</select>
+	
+	<select id="getShiftGroupClassCount" parameterType="java.util.Map" resultType="int">
+		select count(*) from BD_ShiftGroup as  shifts
+		left join BD_ShiftGroupClass as groups
+		on shifts.shiftGroupClass  = groups.id
+		where shifts.dr = 0 
+		<if test="org != null and org !=''">
+			and shifts.org like '%${org}%'
+		</if>
+		<if test="code != null and code !=''">
+			and shifts.code like '%${code}%'
+		</if>
+		<if test="name != null and name !=''">
+			and shifts.name like '%${name}%'
+		</if>
+		<if test="isEffective != null and isEffective !=''">
+			and shifts.effective_IsEffective like '%${isEffective}%'
+		</if>
+		<if test="shiftGroupClass != null and shiftGroupClass != ''">
+			and ( shifts.shiftGroupClass = #{shiftGroupClass} or groups.cid = #{shiftGroupClass} )
+		</if> 
+		and shifts.dr = 0
+	</select>
+	<sql id= "shiftGroupSql">
+		id,t1.shiftGroupClass,t1.createdOn,t1.createdBy,t1.modifiedOn,t1.modifiedBy,t1.sysVersion,t1.org,
+		t1.code,t1.name,t1.department,t1.workCalendar,t1.effective_IsEffective as isEffective,
+		t1.effective_EffectiveDate as effectiveDate,t1.effective_DisableDate as disableDate,t1.dr,t1.ts
+	</sql>
+	<select id="queryShiftGroupMain" parameterType="java.util.Map" resultType="java.util.Map">
+		select * from BD_ShiftGroup as shifts
+		left join BD_ShiftGroupClass as groups
+		on shifts.shiftGroupClass = groups.id
+		where shifts.dr=0 and shifts.effective_IsEffective=1 
+		and isMaintainTeam = 1 and groups.isstate = 1
+		<if test="org != null and org !=''">
+			and shifts.org like #{org}
+		</if>
+	</select>
+	<select id="qureyByGoupClass" parameterType="java.util.Map" resultType="java.util.Map">
+		SELECT t2.n,t2.deptName,t1.<include refid="shiftGroupSql"/>
+			FROM BD_ShiftGroup t1,
+				(SELECT 
+					TOP ${params.endPos} row_number() OVER ( ORDER BY shifts.code ASC ) n,dept.name as deptName,
+					shifts.* from BD_ShiftGroup as  shifts
+					left join BD_ShiftGroupClass as groups
+					on shifts.shiftGroupClass  = groups.id
+					left join SYS_Department as dept
+					on shifts.department = dept.id
+					where shifts.dr = 0 and shifts.effective_IsEffective=1 
+					and shifts.org = #{org}
+					and groups.isstate = 1
+					<if test="dept != null and dept !=''">
+						and shifts.department = #{dept}
+					</if>
+					<if test="name != null and name !=''">
+						and shifts.name like '%${name}%'
+					</if>
+					<if test="code != null and code !=''">
+						and shifts.code like '%${code}%'
+					</if>
+				) t2 
+			WHERE t1.ID = t2.ID AND t2.n >= ${params.startPos} ORDER BY t2.n 
+	</select>
+	<select id="getByGoupClassCount" parameterType="java.util.Map" resultType="int">
+		select count(*) from BD_ShiftGroup as  shifts
+		left join BD_ShiftGroupClass as groups
+		on shifts.shiftGroupClass  = groups.id
+		left join SYS_Department as dept
+		on shifts.department = dept.id
+		where shifts.dr = 0 and shifts.effective_IsEffective=1 
+		and shifts.org = #{org}
+		and groups.isstate = 1
+		<if test="dept != null and dept !=''">
+			and shifts.department = #{dept}
+		</if>
+		<if test="name != null and name !=''">
+			and shifts.name like '%${name}%'
+		</if>
+		<if test="code != null and code !=''">
+			and shifts.code like '%${code}%'
+		</if>
+	</select>
+	
+	<select id="getGroup" resultMap="groupMap">
+		select * from BD_ShiftGroup where (code = #{code} or name = #{code}) and dr = 0 and org = #{org}
+	</select>
+	
+</mapper>

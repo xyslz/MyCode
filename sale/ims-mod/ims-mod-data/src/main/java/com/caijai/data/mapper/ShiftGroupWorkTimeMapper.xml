@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.caijai.data.mapper.ShiftGroupWorkTimeMapper">
+    <resultMap type="com.caijai.data.entity.ShiftGroupWorkTime" id="shiftGroupWorkTimeMapper">			
+	</resultMap>
+	
+	<sql id="columns">
+		 dept.Name as departmentName,workTime.department,workTime.code,workTime.name,workTime.id,workTime.ts,
+		 workTime.startTime,workTime.endTime,workTime.shiftGroup,workTime.employee,workTime.shiftGroupClass,
+		 groupClass.className as shiftGroupClassName,groups.code  as  shiftGroupCode,groups.Name  as shiftGroupName,
+		 member.employeeCode  as employeeCode,member.employeeName  as  employeeName
+	</sql>
+
+	<select id="getTotalCount" parameterType="java.util.Map"
+		resultType="int">
+		select count(1) From (
+		select distinct workTime.id
+		from BD_ShiftGroupWorkTime workTime
+		left join SYS_Department dept on workTime.Department=dept.ID	
+		left join BD_ShiftGroupClass groupClass on  workTime.ShiftGroupClass=groupClass.ID
+		left join BD_ShiftGroup groups on  workTime.ShiftGroup=groups.ID
+		left join MO_ShiftGroupMember member on  workTime.Employee=member.employee
+		where workTime.dr = 0
+		and workTime.org = #{org}
+		<if test="code != null and code != ''">
+			and workTime.code like '%${code}%'
+		</if>
+		<if test="name != null and name != ''">
+			and workTime.name like '%${name}%'
+		</if>	
+		<if test="shiftGroup != null and shiftGroup != ''">
+			and workTime.shiftGroup = #{shiftGroup}
+		</if>
+		<if test="employee != null and employee != ''">
+			and workTime.employee = #{employee}
+		</if>
+		<if test="departmentName != null and departmentName != ''">
+			and dept.name like '%${departmentName}%'
+		</if>
+		<if test="employeeCode != null and employeeCode != ''">
+			and member.employeeCode like '%${employeeCode}%'
+		</if>
+		<if test="employeeName != null and employeeName != ''">
+			and member.employeeName like '%${employeeName}%'
+		</if>
+		<if test="shiftGroupCode != null and shiftGroupCode != ''">
+			and groups.code like '%${shiftGroupCode}%'
+		</if>
+		<if test="shiftGroupName != null and shiftGroupName != ''">
+			and groups.name like '%${shiftGroupName}%'
+		</if>
+		<if test="shiftGroupClassName != null and shiftGroupClassName != ''">
+			and groupClass.name like '%${shiftGroupClassName}%'
+		</if>
+		<if test="ts != null and ts != ''">
+			and workTime.ts = #{ts}
+		</if>
+		<if test="Department != null and Department != ''">
+			and workTime.Department = #{Department}
+		</if>
+		<if test="startTime != null and startTime != ''">
+			and workTime.startTime = #{startTime}
+		</if>
+		<if test="endTime != null and endTime != ''">
+			and workTime.endTime = #{endTime}
+		</if>
+		<if test="createdBy != null and createdBy != ''">
+			and workTime.createdBy = #{createdBy}
+		</if>
+		<if test="createdOn != null and createdOn != ''">
+			and workTime.createdOn = #{createdOn}
+		</if>
+		<if test="modifiedOn != null and modifiedOn != ''">
+			and workTime.modifiedOn = #{modifiedOn}
+		</if>
+		<if test="modifiedBy != null and modifiedBy != ''">
+			and workTime.modifiedBy = #{modifiedBy}
+		</if>
+		
+		) linet
+	</select>
+
+	<select id="queryPage" parameterType="java.util.Map" resultMap="shiftGroupWorkTimeMapper">
+		SELECT t2.n, t1.* FROM (
+		select distinct
+		<include refid="columns" />
+		from BD_ShiftGroupWorkTime workTime
+		left join SYS_Department dept on workTime.Department=dept.ID	
+		left join BD_ShiftGroupClass groupClass on  workTime.ShiftGroupClass=groupClass.ID
+		left join BD_ShiftGroup groups on  workTime.ShiftGroup=groups.ID
+		left join MO_ShiftGroupMember member on  workTime.Employee=member.employee
+		) t1, (
+		SELECT TOP ${pageInfo.endPos} row_number() OVER (order by code) n, id
+		from ( select distinct workTime.id,workTime.code,workTime.name
+		from BD_ShiftGroupWorkTime workTime
+		left join SYS_Department dept on workTime.Department=dept.ID	
+		left join BD_ShiftGroupClass groupClass on  workTime.ShiftGroupClass=groupClass.ID
+		left join BD_ShiftGroup groups on  workTime.ShiftGroup=groups.ID
+		left join MO_ShiftGroupMember member on  workTime.Employee=member.employee
+		where workTime.dr = 0
+		and workTime.org = #{org}
+		<if test="code != null and code != ''">
+			and workTime.code like '%${code}%'
+		</if>
+		<if test="name != null and name != ''">
+			and workTime.name like '%${name}%'
+		</if>	
+		<if test="shiftGroup != null and shiftGroup != ''">
+			and workTime.shiftGroup = #{shiftGroup}
+		</if>
+		<if test="employee != null and employee != ''">
+			and workTime.employee = #{employee}
+		</if>
+		<if test="departmentName != null and departmentName != ''">
+			and dept.name like '%${departmentName}%'
+		</if>
+		<if test="employeeCode != null and employeeCode != ''">
+			and member.employeeCode like '%${employeeCode}%'
+		</if>
+		<if test="employeeName != null and employeeName != ''">
+			and member.employeeName like '%${employeeName}%'
+		</if>
+		<if test="shiftGroupCode != null and shiftGroupCode != ''">
+			and groups.code like '%${shiftGroupCode}%'
+		</if>
+		<if test="shiftGroupName != null and shiftGroupName != ''">
+			and groups.name like '%${shiftGroupName}%'
+		</if>
+		<if test="shiftGroupClassName != null and shiftGroupClassName != ''">
+			and groupClass.name like '%${shiftGroupClassName}%'
+		</if>
+		<if test="ts != null and ts != ''">
+			and workTime.ts = #{ts}
+		</if>
+		<if test="Department != null and Department != ''">
+			and workTime.Department = #{Department}
+		</if>
+		<if test="startTime != null and startTime != ''">
+			and workTime.startTime = #{startTime}
+		</if>
+		<if test="endTime != null and endTime != ''">
+			and workTime.endTime = #{endTime}
+		</if>
+		<if test="createdBy != null and createdBy != ''">
+			and workTime.createdBy = #{createdBy}
+		</if>
+		<if test="createdOn != null and createdOn != ''">
+			and workTime.createdOn = #{createdOn}
+		</if>
+		<if test="modifiedOn != null and modifiedOn != ''">
+			and workTime.modifiedOn = #{modifiedOn}
+		</if>
+		<if test="modifiedBy != null and modifiedBy != ''">
+			and workTime.modifiedBy = #{modifiedBy}
+		</if>
+		) linet
+		) t2
+		WHERE t1.id = t2.id AND t2.n >= ${pageInfo.startPos}
+		ORDER
+		BY startTime
+	</select>
+
+</mapper>

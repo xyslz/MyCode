@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.caijai.data.mapper.OperationMapper">
+	
+	 <resultMap type="com.caijai.data.entity.Operation" id="operationMap">
+	</resultMap>
+	
+	<select id = "getTotalCount" parameterType="map" resultType="int">
+		select count(1)
+		from BD_Operation operation
+		left join BD_UOM uom on operation.outputUOM = uom.id
+		left join MO_MOOperation moOperation on operation.id = moOperation.Operation
+		left join MO_MO mo on moOperation.mo = mo.id
+		where operation.dr = 0 and operation.org = #{org} 
+		<if test = "mo !=null and mo != ''">
+			and mo.DocNo = #{mo}
+		</if>
+		<if test = "description !=null and description != ''">
+			and operation.description = #{description}
+		</if>
+		<if test = "sequence !=null and sequence != ''">
+			and operation.sequence = #{sequence}
+		</if>
+	</select>
+	
+	<select id = "queryPage" parameterType="map" resultMap="operationMap">
+		SELECT t2.n, t1.* FROM ( 
+			select uom.name as outputUOMName,mo.DocNo as moDocNo,operation.* 
+			from BD_Operation operation 
+			left join BD_UOM uom on operation.outputUOM = uom.id and uom.dr = 0
+			left join MO_MOOperation moOperation on operation.id = moOperation.Operation and moOperation.dr = 0
+			left join MO_MO mo on moOperation.mo = mo.id and mo.dr = 0
+			where operation.dr = 0 and operation.org = #{org}
+			<if test = "mo !=null and mo != ''">
+				and mo.DocNo = #{mo}
+			</if>
+			<if test = "description !=null and description != ''">
+				and operation.description = #{description}
+			</if>
+			<if test = "sequence !=null and sequence != ''">
+				and operation.sequence = #{sequence}
+			</if>
+			) t1, 
+			( 
+			select top ${pageInfo.endPos} row_number() OVER (order by operation.id desc) n, operation.id
+			from BD_Operation operation 
+			left join BD_UOM uom on operation.outputUOM = uom.id and uom.dr = 0
+			left join MO_MOOperation moOperation on operation.id = moOperation.Operation and moOperation.dr = 0
+			left join MO_MO mo on moOperation.mo = mo.id and mo.dr = 0
+			where operation.dr = 0 and operation.org = #{org}
+			<if test = "mo !=null and mo != ''">
+				and mo.DocNo = #{mo}
+			</if>
+			<if test = "description !=null and description != ''">
+				and operation.description = #{description}
+			</if>
+			<if test = "sequence !=null and sequence != ''">
+				and operation.sequence = #{sequence}
+			</if>
+		) t2
+		WHERE t1.id = t2.id AND t2.n >= ${pageInfo.startPos}
+		ORDER BY t2.n
+	</select>
+	
+</mapper>

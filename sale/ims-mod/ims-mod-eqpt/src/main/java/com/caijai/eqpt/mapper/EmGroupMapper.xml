@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.caijai.eqpt.mapper.EmGroupMapper">
+	
+	<select id="queryByProline" parameterType="java.util.Map" resultType="java.util.Map">
+		select DISTINCT groups.<include refid="groupSQL"></include> from EQ_EMGroup as groups
+		left join EQ_EM as em on groups.id = em.emgroup
+		left join EQ_ProductionLine as line on line.id=em.productionLine
+		where line.id = #{proLine} and groups.effective_IsEffective = 1 order by code 
+	</select>
+	<sql id="groupSQL">
+		id as id
+	  ,groups.code as code
+	  ,groups.name as name
+      ,groups.Meno as memo
+      ,groups.Org as org
+      ,groups.SysVersion as sysVersion
+      ,groups.Effective_IsEffective as isEffective
+      ,groups.Effective_EffectiveDate as effectiveDate
+      ,groups.Effective_DisableDate as disableDate
+      ,groups.CreatedBy as createdBy
+      ,groups.CreatedOn as createdOn
+      ,groups.ModifiedBy as ModifiedBy
+      ,groups.ModifiedOn as ModifiedOn
+      ,groups.dr as dr
+      ,groups.ts as ts
+      ,groups.sys_source as sysSource
+      ,groups.def1 as def1
+      ,groups.def2 as def2
+      ,groups.def3 as def3
+      ,groups.def4 as def4
+      ,groups.def5 as def5
+	</sql>
+	
+</mapper>

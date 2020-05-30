@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.caijai.data.mapper.OperatorsMapper">
+	
+	<resultMap type="com.caijai.data.entity.Operators" id="operatorsMap">
+		<result column="operatorType" property="operatorType" typeHandler="com.caijai.base.sysenum.handler.OperatorTypeHandler" />
+	</resultMap>
+
+	<select id="getTotalCount" parameterType="java.util.Map" resultType="int">
+		select count(0) from BD_Operators as o
+		left join SYS_Department as dept on dept.id = o.dept
+		left join SYS_RelationObject as relation on relation.operatorID = o.id and relation.dr = 0
+		left join SYS_Euser as u on relation.userID = u.user_pk
+		where o.dr = 0 and o.effective_iseffective = 1
+		<if test="org != null and org !=''">
+			and o.org = #{org}
+		</if>
+		<if test="name != null and name !=''">
+			and o.name like '%${name}%'
+		</if>
+		<if test="operatorType != null and operatorType !=''">
+			and o.operatorType = #{operatorType}
+		</if>
+		<if test="code != null and code !=''">
+			and o.code like '%${code}%'
+		</if>
+		<if test="deptName != null and deptName !=''">
+			and dept.name like '%${deptName}%'
+		</if>
+		<if test="userName != null and userName !=''">
+			and u.username like '%${userName}%'
+		</if>
+		<if test="userCode != null and userCode !=''">
+			and u.usercode like '%${userCode}%'
+		</if>
+	</select>
+	
+	<select id="queryPage" parameterType="java.util.Map" resultMap="operatorsMap">
+		SELECT t2.n, t2.deptCode,t2.deptName,t2.userName,t2.userCode,t1.* FROM BD_Operators as t1, ( 
+			SELECT TOP ${pageInfo.endPos} row_number() OVER (ORDER BY o.code) n, o.id,
+				dept.code as deptCode,dept.name as deptName,u.username as userName,
+				u.usercode as userCode,u.user_pk as userID from BD_Operators as o
+				left join SYS_Department as dept on dept.id = o.dept
+				left join SYS_RelationObject as relation on relation.operatorID = o.id and relation.dr = 0
+				left join SYS_Euser as u on relation.userID = u.user_pk
+				where o.dr = 0 and o.effective_iseffective = 1
+				<if test="org != null and org !=''">
+					and o.org = #{org}
+				</if>
+				<if test="name != null and name !=''">
+					and o.name like '%${name}%'
+				</if>
+				<if test="operatorType != null and operatorType !=''">
+					and o.operatorType = #{operatorType}
+				</if>
+				<if test="code != null and code !=''">
+					and o.code like '%${code}%'
+				</if>
+				<if test="deptName != null and deptName !=''">
+					and dept.name like '%${deptName}%'
+				</if>
+				<if test="userName != null and userName !=''">
+					and u.username like '%${userName}%'
+				</if>
+				<if test="userCode != null and userCode !=''">
+					and u.usercode like '%${userCode}%'
+				</if>
+			) t2
+		WHERE t1.id = t2.id AND t2.n >= ${pageInfo.startPos}
+		ORDER BY t2.n
+	</select>
+	
+	<select id="getByID" parameterType="java.util.Map" resultMap="operatorsMap">
+		SELECT o.*,
+		dept.code as deptCode,dept.name as deptName,u.username as userName,
+		u.usercode as userCode,u.user_pk as userID from BD_Operators as o
+		left join SYS_Department as dept on dept.id = o.dept
+		left join SYS_RelationObject as relation on relation.operatorID = o.id and relation.dr = 0
+		left join SYS_Euser as u on relation.userID = u.user_pk
+		where o.dr = 0 and o.effective_iseffective = 1  and o.id = #{id}
+	</select>
+	
+	<select id="getByDept" parameterType="java.util.Map" resultMap="operatorsMap">
+		select DISTINCT o.Dept,d.parentNode as parentNode from BD_Operators as o 
+		left join SYS_RelationObject as r on o.id = r.OperatorID and r.dr = 0
+		left join SYS_Euser as u on u.user_pk = r.userID
+		left join SYS_Department as d on o.dept = d.id
+		where u.user_pk = #{userID} and o.dr =0 and r.dr = 0  and o.org = #{org}
+	</select>
+	
+	<select id="getOpera" resultMap="operatorsMap">
+		select * from BD_Operators where (code = #{code} or name = #{code}) and dr = 0 and org = #{org}
+	</select>
+	
+	<!-- <resultMap type="com.caijai.sysuser.entity.DataService" id="dataSql"></resultMap>
+	根据角色获取数据权限
+	<select id="getDateByRole" parameterType="java.util.Map" resultMap="dataSql">
+		select d.* from SYS_DataService as d
+		inner join SYS_RoleMenu1 as r on d.id = r.dataID
+		where r.roleID = #{roleID}
+	</select> -->
+</mapper>

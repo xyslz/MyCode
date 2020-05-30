@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.caijai.repair.mapper.DispatchOrderWxMapper">
+	<sql id="dispatchOrderSql">
+		dis.ID as id,
+		dis.PlanStartTime as planStartTime,
+		dis.PlanEndTime as planEndTime,
+		DocNo,
+		dispatchState,
+		maintenancetype,
+		dis.memo as memo,
+		srcdoc,
+		srcdocid,
+		srcdocno,
+		em ,
+		e.code as emCode,
+		e.Name as emName,
+		dis.productionLine as productionLine,
+		pl.Name as plName,
+		pl.Code as plCode,
+		coordinatedpt,
+		maintainperson,
+		p1.name as maintainpersonName,
+		holduser,
+		releaseuser,
+		dis.isstate as isstate,
+		dis.org as org,
+		dis.createdBy as createdBy,
+		dis.createdOn as createdOn,
+		dis.modifiedBy as modifiedBy,
+		dis.modifiedOn as modifiedOn,
+		dis.dr as dr,
+		dis.ts as ts,
+		applicant,
+		p2.name as applicantName,
+		r.Date as repairOrderDate,
+		faultpart,
+		faultdesc
+	</sql>
+
+
+		<select id="queryPageByParam" parameterType="java.util.Map" resultType="java.util.Map">
+		SELECT t2.*
+			FROM [EQ_EMDispatchOrder] t1,
+				(SELECT 
+					TOP ${pageInfo.endPos} row_number() OVER ( ORDER BY dis.createdOn DESC ) n,
+						<include refid="dispatchOrderSql"/>
+						from EQ_EMDispatchOrder as dis 
+						inner join (select distinct  men.DispatchID from EQ_RepairMen men where men.dr = 0 and  men.MaintainID = #{personid}) as men 
+						on dis.ID = men.DispatchID
+						left join EQ_RepairOrder as r on dis.SrcDocID = r.ID 
+						left join SYS_Person as p1 on dis.maintainperson = p1.ID 
+						left join SYS_Person as p2 on r.applicant = p2.ID 
+						left join EQ_EM as e on e.id = dis.EM
+						left join EQ_ProductionLine as pl on pl.ID = dis.ProductionLine
+				where dis.dr = 0  
+				<if test="org != null and org != '' ">
+					and dis.org = #{org} 
+				</if>
+				<if test="code != null and code != '' ">
+					and DocNo like '%${code}%' 
+				</if>
+				<if test="maintainpersonName != null and maintainpersonName != '' ">
+					and p1.name like '%${maintainpersonName}%' 
+				</if>
+				<if test="createdOn != null and createdOn != '' ">
+					and convert( varchar(32), dis.createdOn, 20 ) like '%${createdOn}%' 
+				</if>
+				<if test="srcdocno != null and srcdocno != '' ">
+					and srcdocno like '%${srcdocno}%' 
+				</if>
+				<if test="applicantName != null and applicantName != '' ">
+					and p2.name like '%${applicantName}%' 
+				</if>
+				<if test="repairOrderDate != null and repairOrderDate != '' ">
+					and r.date like '%${repairOrderDate}%' 
+				</if>
+				<if test="dispatchState != null">
+					and dispatchState = #{dispatchState} 
+				</if>
+				<if test="srcdoc != null ">
+					and dis.srcdoc = #{srcdoc} 
+				</if>
+		) t2 
+		WHERE t1.ID = t2.ID AND t2.n >= ${pageInfo.startPos} ORDER BY t2.n 
+	</select>
+	<select id="getDispatchOrderCount" parameterType="java.util.Map" resultType="int">
+		SELECT count(0) from [EQ_EMDispatchOrder] as dis 
+				inner join (select distinct  men.DispatchID from EQ_RepairMen men where men.dr = 0 and  men.MaintainID = #{personid}) as men 
+						on dis.ID = men.DispatchID
+				left join EQ_RepairOrder as r on dis.SrcDocID = r.ID 
+				left join SYS_Person as p1 on dis.maintainperson = p1.ID 
+				left join SYS_Person as p2 on r.applicant = p2.ID 
+				left join EQ_EM as e on e.id = dis.EM
+				left join EQ_ProductionLine as pl on pl.ID = dis.ProductionLine
+		where dis.dr = 0  
+		<if test="org != null and org != '' ">
+			and dis.org = #{org} 
+		</if>
+		<if test="code != null and code != '' ">
+			and DocNo like '%${code}%' 
+		</if>
+		<if test="maintainpersonName != null and maintainpersonName != '' ">
+			and p1.name like '%${maintainpersonName}%' 
+		</if>
+		<if test="createdOn != null and createdOn != '' ">
+			and convert( varchar(32), dis.createdOn, 20 ) like '%${createdOn}%' 
+		</if>
+		<if test="srcdocno != null and srcdocno != '' ">
+			and srcdocno like '%${srcdocno}%' 
+		</if>
+		<if test="applicantName != null and applicantName != '' ">
+			and p2.name like '%${applicantName}%' 
+		</if>
+		<if test="repairOrderDate != null and repairOrderDate != '' ">
+			and r.date like '%${repairOrderDate}%' 
+		</if>
+		<if test="dispatchState != null">
+			and dispatchState = #{dispatchState} 
+		</if>	
+		<if test="srcdoc != null ">
+			and dis.srcdoc = #{srcdoc} 
+		</if>
+	</select>
+	
+</mapper>

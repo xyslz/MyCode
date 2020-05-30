@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.caijai.data.mapper.MoMapper">
+
+    <resultMap type="com.caijai.data.entity.Mo" id="moMapper">
+        <result column="docState" property="docState" typeHandler="com.caijai.base.sysenum.handler.DocStateHandler"/>
+        <result column="overFinishType" property="overFinishType" typeHandler="com.caijai.base.sysenum.handler.OverFinishTypeHandler"/>
+        <result column="isIssueStatus" property="isIssueStatus" typeHandler="com.caijai.base.sysenum.handler.MoIssueStatusHandler"/>
+    </resultMap>
+    
+    <resultMap type="com.caijai.data.entity.vo.MoVO" id="moVOMapper">
+        <result column="docState" property="docState" typeHandler="com.caijai.base.sysenum.handler.DocStateHandler"/>
+        <result column="cadState" property="cadState" typeHandler="com.caijai.base.sysenum.handler.CadStateHandler"/>
+	    <result column="qcState" property="qcState" typeHandler="com.caijai.base.sysenum.handler.QtyResultHandler"/>
+    </resultMap>
+    
+    <sql id="columns">
+        m.id,m.docNo,m.docState,m.openingQty,m.productQty,m.actualProductQty,m.marginQty,m.puToPBURate,
+        m.itemMaster,m.productUOM,m.productBaseUOM,m.costUOM,m.pbuToCBURate,m.productQtybyCostUOM, m.department,
+        m.startDate,m.completeDate,m.actualStartDate,m.DescFlexField_PrivateDescSeg7 as modNo,
+        m.DescFlexField_PrivateDescSeg8 as MachineNo,m.productLotNo as productLotNo,
+        m.ts,m.seiban as seiban,m.seibanCode as seibanCode,m.isIssueStatus isIssueStatus,
+        dept.name as departmentName,
+        	item.code as itemMasterCode, 
+			item.Name as itemMasterName,
+			item.code1 as code1,
+			item.overFinishType as overFinishType,
+			item.overQty as overQty,
+			item.overRate as overRate,
+			item.DescFlexField_PrivateDescSeg14 as quota,
+			u.name as ProductUOMName,
+			u2.name as ProductBaseUOMName,
+			ru.name as rcvUOMName
+    </sql>
+    
+    <sql id="moReportColumns">
+        ISNULL(line.id,mo.ID) id ,mo.docNo moDocNo,mo.DocState,mo.openingQty,mo.ProductQty,mo.actualProductQty,mo.MarginQty,
+       	u.name productUOMName,u2.name productBaseUOMName,ru.name rcvUOMName,
+		dept.[name] as departmentName,item.Code itemCode,item.Code1 code1,item.[Name] itemName,
+		cad.docNo as docNo,line.id lid,line.CadState,line.LotNo,cad.ApplyDate,line.CompleteQty,line.RunLaborHours,line.RunMachineHours,
+		line.DescFlexField_PrivateDescSeg4 as checkHours,line.rcvQty,
+		qc.QCDocCreateDate,line.QcState, line.CheckingQty,rcv.businessDate
+    </sql>
+    
+	<select id="queryNoCompleteList" resultMap="moMapper">
+	  select  <include refid="columns"/>
+			from MO_MO m
+			left join BD_ItemMaster item on m.ItemMaster = item.id
+			left join BD_UOM u on m.ProductUOM = u.ID and u.dr = 0
+			left join BD_UOM u2 on m.ProductBaseUOM = u2.ID and u2.dr = 0
+			left join BD_UOM ru on m.rcvUOM = ru.ID and ru.dr = 0
+			where m.dr = 0
+			and m.org = #{org}
+			and m.DocState = 2 
+			and m.MarginQty > 0 
+			<if test="startDate != null and startDate != '' ">		    
+				and  m.ActualStartDate between #{startDate} and #{endDate}
+			</if>
+			order by m.ActualStartDate
+	</select>
+	
+	<select id="queryNoCompleteCount" resultType="int">
+	    select  count(1)
+			from MO_MO m
+			where m.dr = 0
+			and m.org = #{org}
+			and m.DocState = 2 
+			and m.MarginQty > 0 
+			<if test="startDate != null and startDate != '' ">		    
+			and  m.ActualStartDate between #{startDate} and #{endDate}
+			</if>
+	</select>
+	
+	<select id="getTotalCount" parameterType="java.util.Map" resultType="int">
+	    select  count(1) from (
+	    	select distinct m.id from MO_MO m
+	    		left join SYS_Department dept on dept.id = m.Department
+				left join BD_ItemMaster item on m.ItemMaster = item.id
+				left join BD_UOM u on m.ProductUOM = u.ID and u.dr = 0
+				left join BD_UOM u2 on m.ProductBaseUOM = u2.ID and u2.dr = 0
+				left join BD_UOM ru on m.rcvUOM = ru.ID and ru.dr = 0
+				LEFT JOIN dbo.BD_Category cate ON item.MainItemCategory = cate.id
+			where m.dr = 0
+				and m.org = #{org}
+			<!-- 没有状态不查已关闭的数据 -->
+			<if test="docState == null or docState == ''">  
+				and (m.docState = 2  or  m.docState = 11)
+			</if>
+			<if test="docState != null and docState != ''">
+				and m.docState = #{docState} 
+			</if>
+			<if test="docNo != null and docNo != ''">
+				and m.docNo like '%${docNo}%'
+			</if>
+			<if test="productLotNo != null and productLotNo != ''">
+				and m.productLotNo like '%${productLotNo}%'
+			</if>
+			<if test="seibanCode != null and seibanCode != ''">
+				and m.seibanCode like '%${seibanCode}%'
+			</if>
+			<if test="departmentName != null and departmentName != ''">
+				and dept.Name = #{departmentName}
+			</if>
+			<if test="department != null and department != ''">
+				and m.department in ( ${department} )
+			</if>
+			<if test="itemMasterCode != null and itemMasterCode != ''">
+				and item.code like '%${itemMasterCode}%'
+			</if>
+			<if test="code1 != null and code1 != ''">
+				and item.code1 like '%${code1}%'
+			</if>
+			<if test="itemMasterName != null and itemMasterName != ''">
+				and item.name like '%${itemMasterName}%'
+			</if>
+			<if test="modNo != null and modNo != ''">
+				and m.descFlexField_PrivateDescSeg7 like '%${modNo}%'
+			</if>
+			<if test="machineNo != null and machineNo != ''">
+				and m.descFlexField_PrivateDescSeg8 like '%${machineNo}%'
+			</if>
+			<if test="startDateFrom != null and startDateFrom != '' ">		    
+				and  m.startDate >= #{startDateFrom}
+			</if>
+			<if test="startDateEnd != null and startDateEnd != '' ">		    
+				and  m.startDate <![CDATA[ <= ]]> #{startDateEnd}
+			</if>
+			<if test="businessType != null and businessType != ''">
+			 	and m.businessType = #{businessType}
+			</if>
+			<if test="categoryType != null and categoryType != '' ">
+			    <if test="categoryType != 3 ">			    
+					and cate.code LIKE '${categoryType}%'
+				</if>
+				<if test="categoryType == 3 ">
+					and cate.Code NOT LIKE  '1%' AND cate.Code NOT LIKE  '2%'
+				</if>
+			</if>
+			) mo
+	</select>
+
+			
+			
+	<select id="queryPage"  parameterType="java.util.Map" resultMap="moMapper">
+	    SELECT t2.n, t1.* FROM (
+	    	select <include refid="columns"/>
+			from MO_MO m
+			left join SYS_Department dept on dept.id = m.Department
+			left join BD_ItemMaster item on m.ItemMaster = item.id
+			left join BD_UOM u on m.ProductUOM = u.ID and u.dr = 0
+			left join BD_UOM u2 on m.ProductBaseUOM = u2.ID and u2.dr = 0
+			left join BD_UOM ru on m.rcvUOM = ru.ID and ru.dr = 0
+	    ) t1, ( 
+			SELECT TOP ${pageInfo.endPos} row_number() OVER (order by businessDate desc, startDate desc,docNo asc) n, id
+			from ( select distinct m.id,m.startDate,m.docNo,m.businessDate
+				FROM MO_MO m 
+				left join SYS_Department dept on dept.id = m.Department
+				left join BD_ItemMaster item on m.ItemMaster = item.id
+				LEFT JOIN dbo.BD_Category cate ON item.MainItemCategory = cate.id
+				where 1=1
+				and m.dr = 0
+				and m.org = #{org}
+				<!-- 没有状态不查已关闭的数据 -->
+				<if test="docState == null or docState == ''">  
+					and (m.docState = 2  or  m.docState = 11)
+				</if>
+				<if test="docState != null and docState != ''">
+					and m.docState = #{docState} 
+				</if>
+				<if test="docNo != null and docNo != ''">
+					and m.docNo like '%${docNo}%'
+				</if>
+				<if test="productLotNo != null and productLotNo != ''">
+					and m.productLotNo like '%${productLotNo}%'
+				</if>
+				<if test="seibanCode != null and seibanCode != ''">
+					and m.seibanCode like '%${seibanCode}%'
+				</if>
+				<if test="departmentName != null and departmentName != ''">
+					and dept.Name = #{departmentName}
+				</if>
+				<if test="department != null and department != ''">
+					and m.department in ( ${department} )
+				</if>
+				<if test="itemMasterCode != null and itemMasterCode != ''">
+					and item.code like '%${itemMasterCode}%'
+				</if>
+				<if test="code1 != null and code1 != ''">
+					and item.code1 like '%${code1}%'
+				</if>
+				<if test="itemMasterName != null and itemMasterName != ''">
+					and item.name like '%${itemMasterName}%'
+				</if>
+				<if test="modNo != null and modNo != ''">
+					and m.descFlexField_PrivateDescSeg7 like '%${modNo}%'
+				</if>
+				<if test="machineNo != null and machineNo != ''">
+					and m.descFlexField_PrivateDescSeg8 like '%${machineNo}%'
+				</if>
+				<if test="startDateFrom != null and startDateFrom != '' ">		    
+					and  m.startDate >= #{startDateFrom}
+				</if>
+				<if test="startDateEnd != null and startDateEnd != '' ">		    
+					and  m.startDate <![CDATA[ <= ]]> #{startDateEnd}
+				</if>
+				<if test="businessType != null and businessType != ''">
+				 	and m.businessType = #{businessType}
+				</if>
+				<if test="categoryType != null and categoryType != '' ">
+				    <if test="categoryType != 3 ">			    
+						and cate.code LIKE '${categoryType}%'
+					</if>
+					<if test="categoryType == 3 ">
+						and cate.Code NOT LIKE  '1%' AND cate.Code NOT LIKE  '2%'
+					</if>
+				</if>
+				<if test="isIssueStatus != null">
+					<choose>
+						<when test="isIssueStatus == 1">
+							and m.isIssueStatus is NULL
+						</when>
+						<otherwise>
+							and m.isIssueStatus = #{isIssueStatus}
+						</otherwise>
+					</choose>
+				</if>
+				) mo
+		) t2
+		WHERE t1.id = t2.id AND t2.n >= ${pageInfo.startPos}
+		ORDER BY t2.n
+	</select>
+	
+	<select id="getTotalCountReport" parameterType="java.util.Map" resultType="int">
+	     select  count(1) From (
+	    	select distinct <include refid="moReportColumns"/>
+				FROM dbo.MO_MO mo
+				left join SYS_Department dept on dept.id = mo.Department
+				left join BD_ItemMaster item on mo.ItemMaster=item.ID
+				LEFT JOIN dbo.BD_Category cate ON item.MainItemCategory = cate.id
+				left join BD_UOM u on mo.ProductUOM = u.ID 
+				left join BD_UOM u2 on mo.ProductBaseUOM = u2.ID  
+				left join BD_UOM ru on mo.rcvUOM = ru.ID  
+				LEFT JOIN Complete_CompleteApplyDocLine line on line.mo = mo.ID and line.dr = 0
+				LEFT JOIN Complete_CompleteApplyDoc cad on line.CompleteApplyDoc = cad.ID and cad.dr = 0
+				left join QC_QCDocLine qcline on qcline.srcDocInfo_SrcDoc_EntityID = line.CompleteApplyDoc 
+				and convert(nvarchar,qcline.srcDocInfo_SrcDocLineNo) = line.DocLineNo and qcline.dr = 0
+				left join QC_QCDoc qc on qc.id = qcline.QCDoc and qc.dr = 0
+				left join Complete_RcvRptDocLine rcvline ON rcvline.SourceDoc_SrcDocLineID = line.ID
+					   AND rcvline.SourceDoc_SrcDocID = line.CompleteApplyDoc and rcvline.dr = 0
+				left join Complete_RcvRptDoc rcv on rcv.id = rcvline.RcvRptDoc and rcv.dr = 0
+				LEFT JOIN (
+				SELECT SourceDoc_SrcDocLineID,SUM(RcvQtyByWhUOM) RcvQtyByWhUOM,SUM(RcvQtyByCostUom) RcvQtyByCostUom FROM dbo.Complete_RcvRptDocLine 
+				WHERE dr = 0
+				GROUP BY SourceDoc_SrcDocLineID 
+				) rpt ON rpt.SourceDoc_SrcDocLineID = rcvline.SourceDoc_SrcDocLineID
+			where mo.dr = 0
+			and mo.org = #{org}
+			<if test="docState != null and docState != ''">
+			and mo.docState = #{docState} 
+			</if> 
+			<if test="cadState != null and cadState != ''">
+			and line.cadState = #{cadState} 
+			</if>
+			<if test="qcState != null and qcState != ''">
+			and line.qcState = #{qcState} 
+			</if>
+			<if test="moDocNo != null and moDocNo != ''">
+			and mo.docNo like '%${moDocNo}%' 
+			</if>
+			<if test="businessType != null and businessType != ''">
+			 	and mo.businessType = #{businessType}
+			</if>
+			<if test="departmentName != null and departmentName != ''">
+			and dept.Name = #{departmentName}
+			</if>
+			<if test="docNo != null and docNo != ''">
+			and cad.docNo like '%${docNo}%'
+			</if>
+			<if test="code1 != null and code1 != ''">
+			and item.code1 like '%${code1}%'
+			</if>
+			<if test="itemCode != null and itemCode != ''">
+			and item.code like '%${itemCode}%'
+			</if>
+			<if test="itemName != null and itemName != ''">
+			and item.name like '%${itemName}%' 
+			</if>
+			<if test="applyDateFrom != null and applyDateFrom != '' ">		    
+			and cad.applyDate >= #{applyDateFrom}
+			</if>
+			<if test="applyDateEnd != null and applyDateEnd != '' ">		    
+			and  cad.applyDate <![CDATA[ <= ]]> #{applyDateEnd}
+			</if>
+			<if test="qcDocCreateDateFrom != null and qcDocCreateDateFrom != '' ">		    
+			and qc.qcDocCreateDate >= #{qcDocCreateDateFrom}
+			</if>
+			<if test="qcDocCreateDateEnd != null and qcDocCreateDateEnd != '' ">		    
+			and  qc.qcDocCreateDate <![CDATA[ <= ]]> #{qcDocCreateDateEnd}
+			</if>
+			<if test="businessDateFrom != null and businessDateFrom != '' ">		    
+			and rcv.businessDate >= #{businessDateFrom}
+			</if>
+			<if test="businessDateEnd != null and businessDateEnd != '' ">		    
+			and rcv.businessDate <![CDATA[ <= ]]> #{businessDateEnd}
+			</if>
+			<if test="categoryType != null and categoryType != '' ">
+			    <if test="categoryType != 3 ">			    
+				and cate.code LIKE '${categoryType}%'
+				</if>
+				<if test="categoryType == 3 ">
+				and cate.Code NOT LIKE  '1%' AND cate.Code NOT LIKE  '2%'
+				</if>
+			</if>
+			) linet
+	</select>
+	
+	<select id="queryPageReport"  parameterType="java.util.Map" resultMap="moVOMapper">
+	    SELECT t2.n, t1.* FROM (
+	    	select m.*
+				FROM (	
+			select distinct <include refid="moReportColumns"/>
+				FROM dbo.MO_MO mo
+				left join SYS_Department dept on dept.id = mo.Department
+				left join BD_ItemMaster item on mo.ItemMaster=item.ID
+				left join BD_UOM u on mo.ProductUOM = u.ID 
+				left join BD_UOM u2 on mo.ProductBaseUOM = u2.ID  
+				left join BD_UOM ru on mo.rcvUOM = ru.ID  
+				LEFT JOIN Complete_CompleteApplyDocLine line on line.mo = mo.ID and line.dr = 0
+				LEFT JOIN Complete_CompleteApplyDoc cad on line.CompleteApplyDoc = cad.ID and cad.dr = 0
+				left join QC_QCDocLine qcline on qcline.srcDocInfo_SrcDoc_EntityID = line.CompleteApplyDoc 
+				and convert(nvarchar,qcline.srcDocInfo_SrcDocLineNo) = line.DocLineNo and qcline.dr = 0
+				left join QC_QCDoc qc on qc.id = qcline.QCDoc and qc.dr = 0
+				left join Complete_RcvRptDocLine rcvline ON rcvline.SourceDoc_SrcDocLineID = line.ID
+					   AND rcvline.SourceDoc_SrcDocID = line.CompleteApplyDoc and rcvline.dr = 0
+				left join Complete_RcvRptDoc rcv on rcv.id = rcvline.RcvRptDoc and rcv.dr = 0
+				LEFT JOIN (
+				SELECT SourceDoc_SrcDocLineID,SUM(RcvQtyByWhUOM) RcvQtyByWhUOM,SUM(RcvQtyByCostUom) RcvQtyByCostUom FROM dbo.Complete_RcvRptDocLine 
+				WHERE dr = 0
+				GROUP BY SourceDoc_SrcDocLineID 
+				) rpt ON rpt.SourceDoc_SrcDocLineID = rcvline.SourceDoc_SrcDocLineID
+			) m
+	    ) t1, ( 
+			SELECT TOP ${pageInfo.endPos} row_number() OVER (order by moDocNo, code1) n, id
+			from ( select distinct m.* from (
+			select distinct <include refid="moReportColumns"/>
+				FROM dbo.MO_MO mo
+				left join SYS_Department dept on dept.id = mo.Department
+				left join BD_ItemMaster item on mo.ItemMaster=item.ID
+				LEFT JOIN dbo.BD_Category cate ON item.MainItemCategory = cate.id
+				left join BD_UOM u on mo.ProductUOM = u.ID 
+				left join BD_UOM u2 on mo.ProductBaseUOM = u2.ID  
+				left join BD_UOM ru on mo.rcvUOM = ru.ID  
+				LEFT JOIN Complete_CompleteApplyDocLine line on line.mo = mo.ID and line.dr = 0
+				LEFT JOIN Complete_CompleteApplyDoc cad on line.CompleteApplyDoc = cad.ID and cad.dr = 0
+				left join QC_QCDocLine qcline on qcline.srcDocInfo_SrcDoc_EntityID = line.CompleteApplyDoc 
+				and convert(nvarchar,qcline.srcDocInfo_SrcDocLineNo) = line.DocLineNo and qcline.dr = 0
+				left join QC_QCDoc qc on qc.id = qcline.QCDoc and qc.dr = 0
+				left join Complete_RcvRptDocLine rcvline ON rcvline.SourceDoc_SrcDocLineID = line.ID
+					   AND rcvline.SourceDoc_SrcDocID = line.CompleteApplyDoc and rcvline.dr = 0
+				left join Complete_RcvRptDoc rcv on rcv.id = rcvline.RcvRptDoc and rcv.dr = 0
+				LEFT JOIN (
+				SELECT SourceDoc_SrcDocLineID,SUM(RcvQtyByWhUOM) RcvQtyByWhUOM,SUM(RcvQtyByCostUom) RcvQtyByCostUom FROM dbo.Complete_RcvRptDocLine 
+				WHERE dr = 0
+				GROUP BY SourceDoc_SrcDocLineID 
+				) rpt ON rpt.SourceDoc_SrcDocLineID = rcvline.SourceDoc_SrcDocLineID
+				where mo.dr = 0
+				and mo.org = #{org}
+				<if test="docState != null and docState != ''">
+				and mo.docState = #{docState} 
+				</if> 
+				<if test="cadState != null and cadState != ''">
+				and line.cadState = #{cadState} 
+				</if>
+				<if test="qcState != null and qcState != ''">
+				and line.qcState = #{qcState} 
+				</if>
+				<if test="moDocNo != null and moDocNo != ''">
+				and mo.docNo like '%${moDocNo}%' 
+				</if>
+				<if test="businessType != null and businessType != ''">
+				 	and mo.businessType = #{businessType}
+				</if>
+				<if test="departmentName != null and departmentName != ''">
+				and dept.Name = #{departmentName}
+				</if>
+				<if test="docNo != null and docNo != ''">
+				and cad.docNo like '%${docNo}%'
+				</if>
+				<if test="itemCode != null and itemCode != ''">
+				and item.code like '%${itemCode}%'
+				</if>
+				<if test="code1 != null and code1 != ''">
+				and item.code1 like '%${code1}%'
+				</if>
+				<if test="itemName != null and itemName != ''">
+				and item.name like '%${itemName}%' 
+				</if>
+				<if test="applyDateFrom != null and applyDateFrom != '' ">		    
+				and cad.applyDate >= #{applyDateFrom}
+				</if>
+				<if test="applyDateEnd != null and applyDateEnd != '' ">		    
+				and  cad.applyDate <![CDATA[ <= ]]> #{applyDateEnd}
+				</if>
+				<if test="qcDocCreateDateFrom != null and qcDocCreateDateFrom != '' ">		    
+				and qc.qcDocCreateDate >= #{qcDocCreateDateFrom}
+				</if>
+				<if test="qcDocCreateDateEnd != null and qcDocCreateDateEnd != '' ">		    
+				and  qc.qcDocCreateDate <![CDATA[ <= ]]> #{qcDocCreateDateEnd}
+				</if>
+				<if test="businessDateFrom != null and businessDateFrom != '' ">		    
+				and rcv.businessDate >= #{businessDateFrom}
+				</if>
+				<if test="businessDateEnd != null and businessDateEnd != '' ">
+				and rcv.businessDate <![CDATA[ <= ]]> #{businessDateEnd}
+				</if>
+				<if test="categoryType != null and categoryType != '' ">
+			    	<if test="categoryType != 3 ">			    
+					and cate.code LIKE '${categoryType}%'
+					</if>
+					<if test="categoryType == 3 ">
+					and cate.Code NOT LIKE  '1%' AND cate.Code NOT LIKE  '2%'
+					</if>
+				</if>
+				) m
+			) linet
+		) t2
+		WHERE t1.id = t2.id AND t2.n >= ${pageInfo.startPos}
+		ORDER BY t2.n
+	</select>
+	
+	<select id="getMoCount" resultType="int">
+		select count(0) from MO_DispatchOrder where mo = #{mo} and dr = 0 and DocState != 12
+	</select>
+	
+</mapper>

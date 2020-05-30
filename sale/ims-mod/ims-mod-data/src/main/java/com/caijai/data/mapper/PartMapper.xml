@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.caijai.data.mapper.PartMapper">
+	<sql id= "PartVO">
+		(select a.id,a.code,a.name 
+			,b.Code as categoryCode,c.Name as categoryName
+ 			,a.org 
+ 			from BD_ItemMaster a 
+			left join BD_Category b on a.MainItemCategory = b.ID
+			left join BD_Category_Trl c on b.ID = c.ID and c.SysMLFlag = 'zh-CN' 
+			where a.Code like '40%'
+			and a.dr = 0)
+	</sql>
+
+	<select id="getTotalCount" parameterType="java.util.Map" resultType="int">
+		SELECT count(1) FROM <include refid="PartVO" /> as t
+				where 1 = 1
+		<if test="org != null and org !=''">
+			and t.org = #{org,jdbcType=VARCHAR}
+		</if>
+		<if test="code != null and code !=''">
+			and t.code = #{code,jdbcType=VARCHAR}
+		</if>
+		<if test="name != null and name !=''">
+			and t.name = #{name,jdbcType=VARCHAR}
+		</if>
+		<if test="categoryCode != null and categoryCode !=''">
+			and t.categoryCode = #{categoryCode,jdbcType=VARCHAR}
+		</if>
+		<if test="categoryName != null and categoryName !=''">
+			and t.categoryName = #{categoryName,jdbcType=VARCHAR}
+		</if>
+	</select>
+	
+	<select id="queryPage" parameterType="java.util.Map" resultType="com.caijai.data.entity.vo.PartVO">
+		SELECT t2.n, t1.* FROM <include refid="PartVO" /> as t1, ( 
+			SELECT TOP ${pageInfo.endPos} row_number() OVER (ORDER BY code) n, id
+				FROM <include refid="PartVO" /> as t where 1=1
+				<if test="org != null and org !=''">
+					and t.org = #{org,jdbcType=VARCHAR}
+				</if>
+				<if test="code != null and code !=''">
+					and t.code = #{code,jdbcType=VARCHAR}
+				</if>
+				<if test="name != null and name !=''">
+					and t.name = #{name,jdbcType=VARCHAR}
+				</if>
+				<if test="categoryCode != null and categoryCode !=''">
+					and t.categoryCode = #{categoryCode,jdbcType=VARCHAR}
+				</if>
+				<if test="categoryName != null and categoryName !=''">
+					and t.categoryName = #{categoryName,jdbcType=VARCHAR}
+				</if>
+		) t2
+		WHERE t1.id = t2.id AND t2.n >= ${pageInfo.startPos}
+		ORDER BY t2.n
+	</select>
+</mapper>

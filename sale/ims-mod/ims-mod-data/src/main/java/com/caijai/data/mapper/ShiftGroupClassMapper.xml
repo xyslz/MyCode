@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.caijai.data.mapper.ShiftGroupClassMapper">
+	<select id="queryParentClass" parameterType="java.util.Map" resultType="java.util.Map">
+		select * from [dbo].[BD_ShiftGroupClass] where dr=0 and ( cid is null or cid = '' )
+		<if test="org != null and org !=''">
+			and org = #{org}
+		</if>
+	</select>
+</mapper>

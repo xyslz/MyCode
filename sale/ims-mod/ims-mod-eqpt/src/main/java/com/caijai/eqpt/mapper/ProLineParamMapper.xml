@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.caijai.eqpt.mapper.ProLineParamMapper">
+	
+	<resultMap type="com.caijai.eqpt.entity.ProLineParam" id="paramMap">
+<!-- 		<result column="mainBurdenWay" property="mainBurdenWay" typeHandler="com.caijai.base.sysenum.handler.ParamWayHandler"/>
+		<result column="aidsBurdenWay" property="aidsBurdenWay" typeHandler="com.caijai.base.sysenum.handler.ParamWayHandler"/>
+		<result column="colorBurdenWay" property="colorBurdenWay" typeHandler="com.caijai.base.sysenum.handler.ParamWayHandler"/>
+		<result column="packWay" property="packWay" typeHandler="com.caijai.base.sysenum.handler.ParamWayHandler"/>
+		<result column="stackWay" property="stackWay" typeHandler="com.caijai.base.sysenum.handler.ParamWayHandler"/>
+		<result column="feedWay" property="feedWay" typeHandler="com.caijai.base.sysenum.handler.FeedWayHandler"/>
+		<result column="dryConfiguration" property="dryConfiguration" typeHandler="com.caijai.base.sysenum.handler.DryConfigurationHandler"/>
+		<result column="mainSource" property="mainSource" typeHandler="com.caijai.base.sysenum.handler.MainSourceHandler"/>
+		<result column="uniformDayMode" property="uniformDayMode" typeHandler="com.caijai.base.sysenum.handler.UniformDayModeHandler"/>
+		<result column="dryWarmWay" property="dryWarmWay" typeHandler="com.caijai.base.sysenum.handler.DryWarmWayHandler"/>
+		<result column="vacuumWay" property="vacuumWay" typeHandler="com.caijai.base.sysenum.handler.VacuumWayHandler"/>
+		<result column="waterSource" property="waterSource" typeHandler="com.caijai.base.sysenum.handler.WaterSourceHandler"/> -->
+	</resultMap>
+	<select id="queryProLineParam" parameterType="String" resultMap="paramMap">
+		select params.*,em.code as emCode,em.SPECS as emSpecs,em.AssetsCode as emAssetsCode,supplier.name as emSupplierName,
+		item.name as itemName,item.code as itemCode,dept.name as deptName,org.Name as orgName
+		from EQ_ProLineParam as params
+		left join dbo.EQ_EM as em on em.ID = params.emID
+		left join dbo.BD_Supplier as supplier on em.Supplier = supplier.ID
+		left join dbo.BD_ItemMaster as item on item.ID = params.itemMaster
+		left join dbo.SYS_Department as dept on dept.id = params.dept
+		left join dbo.SYS_Organization as org on org.id = params.Org
+		where params.dr = 0 and params.productionLine = #{productionLine}
+		and params.org=#{org}
+	</select>
+</mapper>

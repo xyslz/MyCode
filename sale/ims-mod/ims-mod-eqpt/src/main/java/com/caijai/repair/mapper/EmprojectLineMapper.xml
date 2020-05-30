@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.caijai.repair.mapper.EmprojectLineMapper">
+	<select id="queryListByEm" parameterType="String" resultType="com.caijai.repair.entity.po.Emprojectline">
+		select line.* from EQ_EMProjectLine line
+		inner join EQ_EMProject em on line.EMProject = em.ID
+		where em.EMGroup = #{emGroupid}
+	</select>
+</mapper>
